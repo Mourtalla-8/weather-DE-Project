@@ -17,7 +17,7 @@ ENV_FILE = PROJECT_ROOT / ".env"
 ENV_EXAMPLE = PROJECT_ROOT / ".env.example"
 REQUIREMENTS = PROJECT_ROOT / "requirements.txt"
 COMPOSE_FILE = PROJECT_ROOT / "docker-compose.yml"
-LOCK_FILE = PROJECT_ROOT / "data" / ".pipeline.lock"
+LOCK_FILE = PROJECT_ROOT / ".pipeline.lock"
 
 MIN_PYTHON = (3, 11)
 REQUIRED_PORTS = (27017, 9000, 9001, 8443)
@@ -135,11 +135,22 @@ def install_requirements() -> None:
     log_ok("Dépendances Python installées")
 
 
+def ensure_data_dirs() -> None:
+    """Crée data/ et sous-dossiers avec les bonnes permissions avant Docker."""
+    for sub in ("raw", "processed", "mongo", "minio", "nifi"):
+        (PROJECT_ROOT / "data" / sub).mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(PROJECT_ROOT / "data", 0o755)
+    except OSError:
+        pass
+
+
 def docker_compose_up() -> None:
     if not COMPOSE_FILE.exists():
         raise SetupError("docker-compose.yml introuvable")
     if not ENV_FILE.exists():
         raise SetupError(".env introuvable — relancez setup.py")
+    ensure_data_dirs()
     run(["docker", "compose", "up", "-d"], quiet=True)
     log_ok("Services Docker démarrés")
 
@@ -205,7 +216,7 @@ def acquire_lock() -> None:
             pid = int(LOCK_FILE.read_text(encoding="utf-8").strip())
             os.kill(pid, 0)
             raise SetupError(
-                "Pipeline déjà en cours — supprimez data/.pipeline.lock si bloqué"
+                "Pipeline déjà en cours — supprimez .pipeline.lock si bloqué"
             )
         except ProcessLookupError:
             LOCK_FILE.unlink(missing_ok=True)
@@ -215,7 +226,7 @@ def acquire_lock() -> None:
                 LOCK_FILE.unlink(missing_ok=True)
             except OSError as err:
                 raise SetupError(
-                    "Lock inaccessible — supprimez data/.pipeline.lock manuellement"
+                    "Lock inaccessible — supprimez .pipeline.lock manuellement"
                 ) from err
     LOCK_FILE.write_text(str(os.getpid()), encoding="utf-8")
 

@@ -9,6 +9,7 @@ data/
 
 # Environment & secrets
 .env
+.pipeline.lock
 
 # IDE
 .vscode/

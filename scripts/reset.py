@@ -68,8 +68,9 @@ def remove_venv() -> None:
 
 
 def remove_lock() -> None:
-    if LOCK_FILE.exists():
-        LOCK_FILE.unlink()
+    for lock in (LOCK_FILE, PROJECT_ROOT / "data" / ".pipeline.lock"):
+        if lock.exists():
+            lock.unlink(missing_ok=True)
 
 
 def main() -> int:
