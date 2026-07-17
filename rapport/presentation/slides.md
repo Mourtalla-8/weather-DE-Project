@@ -204,13 +204,13 @@ Deux buckets séparent zone raw et zone curated :
 
 **Script** : `etl/load.py` (pymongo)
 
-| Élément | Valeur |
-|---|---|
-| Base / Collection | `weather_dwh` / `weather_observations` |
-| Documents chargés | <span class="metric">96 429</span> |
-| Mode | Remplacement complet (pas de doublons) |
-| Index | `date_time` (unique), `precip_type` |
-| Batch size | 5 000 (configurable via `MONGO_BATCH_SIZE`) |
+| Élément | Valeur                                               |
+|---|------------------------------------------------------|
+| Base / Collection | `weather_dwh` / `weather_observations`               |
+| Documents chargés | <span class="metric">96 429</span>                   |
+| Mode | Remplacement complet (pas de doublons)               |
+| Index | `date_time` (`idx_date_time_unique`), `precip_type` (`idx_precip_type`) |
+| Batch size | 5 000 (configurable via `MONGO_BATCH_SIZE`)          |
 
 Restauration fournie via `mongodump` / `mongorestore`.
 
@@ -236,14 +236,7 @@ Les données transformées sont stockées dans MongoDB sous forme de documents J
 }
 ```
 
-### Index créés
-
-| Index | Champ ciblé | Type |
-|---|---|---|
-| `idx_date_time_unique` | `date_time` | Unique |
-| `idx_precip_type` | `precip_type` | Standard |
-
-**Restauration de la base** : `rapport/database/README.md`
+### **Restauration de la base** : `rapport/database/README.md`
 
 ---
 
@@ -322,7 +315,7 @@ Nous avons livré un pipeline ETL **complet, documenté et reproductible** :
 
 # Merci
 
-## Questions & réponses
+## Questions
 
 Dépôt : `github.com/Mourtalla-8/weather-DE-Project`
 Rapport complet : `rapport/rapport.md`
