@@ -4,6 +4,14 @@ Pipeline ETL local pour le dataset météo : extraction, stockage dans un data l
 
 **Périmètre de notre équipe** : livrer les données nettoyées dans MinIO (`weather-processed`) et dans MongoDB. L'équipe Data/BI récupère ensuite ces deux sources pour l'analyse et les dashboards.
 
+## Rapport ETL
+
+Voir [rapport/rapport.md](rapport/rapport.md) pour le rapport complet de l'équipe (architecture, NiFi, MinIO, MongoDB, qualité des données, captures d'écran).
+
+Index du dossier : [rapport/README.md](rapport/README.md)
+
+**Présentation** : slides Marp exportables en PowerPoint/PDF dans [rapport/presentation/](rapport/presentation/README.md).
+
 ---
 
 ## Structure du projet
@@ -14,14 +22,15 @@ weather-DE-Project/
 ├── .env.example            # Template de configuration
 ├── requirements.txt        # Dépendances Python
 ├── etl/
-│   ├── extract.py          # Téléchargement dataset → ./data/raw/
-│   ├── transform.py        # Nettoyage weather-lake → weather-processed
-│   └── load.py             # Chargement weather-processed → MongoDB
+│   ├── extract.py          # Téléchargement dataset -> ./data/raw/
+│   ├── transform.py        # Nettoyage weather-lake -> weather-processed
+│   └── load.py             # Chargement weather-processed -> MongoDB
 ├── scripts/
 │   ├── setup.py            # Configuration initiale
 │   ├── run_pipeline.py     # Pipeline ETL automatique
 │   ├── reset.py            # Reset du projet
 │   └── _common.py          # Utilitaires partagés
+├── rapport/                # Rapport ETL + datasets + dump MongoDB
 └── data/                   # Données runtime (gitignored)
     ├── raw/                # Fichiers bruts
     ├── processed/          # Fichiers transformés (CSV, Parquet, metadata)
@@ -30,7 +39,7 @@ weather-DE-Project/
     └── nifi/               # État NiFi
 ```
 
-### Stockage MinIO — deux buckets séparés
+### Stockage MinIO - deux buckets séparés
 
 | Bucket | Rôle | Objets |
 |---|---|---|
@@ -80,7 +89,7 @@ python scripts/setup.py        # reconfiguration
 | Script | Rôle |
 |---|---|
 | `scripts/setup.py` | Configuration initiale après clone |
-| `scripts/run_pipeline.py` | Pipeline ETL complet (extract → MinIO → transform → load) |
+| `scripts/run_pipeline.py` | Pipeline ETL complet (extract -> MinIO -> transform -> load) |
 | `scripts/reset.py` | Reset du projet (état propre) |
 
 ---
@@ -104,7 +113,7 @@ Copiez `.env.example` vers `.env`. Variables principales :
 
 ---
 
-## Pipeline ETL — étape par étape
+## Pipeline ETL - étape par étape
 
 ### 1. Démarrer l'infrastructure
 
@@ -115,7 +124,7 @@ docker compose ps
 
 Attendez que MongoDB et MinIO soient `healthy` avant de lancer les scripts.
 
-### 2. Extract — télécharger le dataset
+### 2. Extract - télécharger le dataset
 
 ```bash
 python etl/extract.py
@@ -125,7 +134,7 @@ Le script utilise `kagglehub` pour télécharger automatiquement le dataset publ
 
 **Résultat** : fichiers copiés dans `./data/raw/` (dont `weatherHistory.csv`).
 
-### 3. NiFi — upload raw vers MinIO
+### 3. NiFi - upload raw vers MinIO
 
 #### a) Importer le Process Group
 
@@ -140,7 +149,7 @@ Le script utilise `kagglehub` pour télécharger automatiquement le dataset publ
 3. Configurer `AWSCredentialsProviderControllerService` :
    - **Access Key ID** : valeur de `MINIO_ACCESS_KEY` (identique à `MINIO_USER`)
    - **Secret Access Key** : valeur de `MINIO_SECRET_KEY` (identique à `MINIO_PASSWORD`)
-4. **Activer** le Controller Service (clic droit → Enable)
+4. **Activer** le Controller Service (clic droit -> Enable)
 
 #### c) Vérifier les processeurs
 
@@ -158,10 +167,10 @@ Le processeur `GetFile` lit depuis `/opt/nifi/input/` (monté depuis `./data/raw
 #### d) Lancer le flow
 
 1. Sélectionner le Process Group
-2. Clic droit → **Start**
+2. Clic droit -> **Start**
 3. Vérifier dans la MinIO Console que `weather-lake/raw/weatherHistory.csv` est présent
 
-### 4. Transform — nettoyage et normalisation
+### 4. Transform - nettoyage et normalisation
 
 ```bash
 python etl/transform.py
@@ -188,13 +197,13 @@ Fichiers uploadés dans MinIO (`weather-processed`) :
 
 | Fichier | Description |
 |---|---|
-| `weather_processed.csv` | Dataset nettoyé — **utilisé pour MongoDB** |
+| `weather_processed.csv` | Dataset nettoyé - **utilisé pour MongoDB** |
 | `weather_processed.parquet` | Version Parquet du dataset nettoyé |
 | `weather_processed_enriched.csv` | Version enrichie |
 | `weather_processed_enriched.parquet` | Version Parquet enrichie |
 | `weatherHistory_clean_metadata.json` | Métadonnées du run |
 
-### 5. Load — chargement MongoDB
+### 5. Load - chargement MongoDB
 
 ```bash
 python etl/load.py
@@ -275,11 +284,11 @@ Résultat attendu : `96429` documents.
 
 ---
 
-## Livrables pour l'équipe Data/BI
+## Livrable
 
 Notre équipe livre deux sources prêtes à l'emploi :
 
-### 1. MinIO — bucket `weather-processed`
+### 1. MinIO - bucket `weather-processed`
 
 | Objet | Description |
 |---|---|
@@ -291,38 +300,12 @@ Notre équipe livre deux sources prêtes à l'emploi :
 
 - **Accès** : MinIO Console ([http://localhost:9001](http://localhost:9001)) ou SDK S3 (endpoint `http://localhost:9000`)
 
-### 2. MongoDB — Data Warehouse
+### 2. MongoDB - Data Warehouse
 
 - **URI** : `mongodb://<user>:<password>@localhost:27017/?authSource=admin`
 - **Base** : `weather_dwh`
 - **Collection** : `weather_observations`
 - **Connexion** : `mongosh`, Compass, ou driver Python/BI (`pymongo`, etc.)
-
----
-
-## Structure du projet
-
-```
-weather-DE-Project/
-├── docker-compose.yml      # MongoDB, MinIO, NiFi
-├── .env.example            # Template de configuration
-├── requirements.txt        # Dépendances Python
-├── etl/
-│   ├── extract.py          # Téléchargement dataset → ./data/raw/
-│   ├── transform.py        # Nettoyage weather-lake → weather-processed
-│   └── load.py             # Chargement weather-processed → MongoDB
-├── scripts/
-│   ├── setup.py            # Configuration initiale
-│   ├── run_pipeline.py     # Pipeline ETL automatique
-│   ├── reset.py            # Reset du projet
-│   └── _common.py          # Utilitaires partagés
-└── data/                   # Données runtime (gitignored)
-    ├── raw/                # Fichiers bruts
-    ├── processed/          # Fichiers transformés (CSV, Parquet, metadata)
-    ├── minio/              # Volume persistant MinIO
-    ├── mongo/              # Volume persistant MongoDB
-    └── nifi/               # État NiFi
-```
 
 ---
 
@@ -398,5 +381,5 @@ docker compose logs -f mongodb
 
 ## Équipe
 
-Projet Data Engineering — ForceN, Groupe A.
-Pipeline ETL météo : Extract → Data Lake (MinIO) → Transform → Data Warehouse (MongoDB) → Équipe BI.
+Projet Data Engineering - ForceN, Groupe A.
+Pipeline ETL météo : Extract -> Data Lake (MinIO) -> Transform -> Data Warehouse (MongoDB) -> Équipe Analyse.
