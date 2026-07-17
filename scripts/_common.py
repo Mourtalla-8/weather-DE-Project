@@ -193,20 +193,38 @@ def service_ready(service: str) -> bool:
     return False
 
 
+def port_reachable(port: int, host: str = "127.0.0.1") -> bool:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.settimeout(2)
+        return sock.connect_ex((host, port)) == 0
+
+
+def infrastructure_ready() -> bool:
+    return (
+        all(service_ready(name) for name in HEALTHY_SERVICES)
+        and port_reachable(27017)
+        and port_reachable(9000)
+    )
+
+
 def wait_for_services(timeout: int = 120) -> None:
-    log_info("Attente MongoDB et MinIO")
+    log_info("Attente MongoDB (27017) et MinIO (9000)")
     deadline = time.time() + timeout
     while time.time() < deadline:
-        if all(service_ready(name) for name in HEALTHY_SERVICES):
+        if infrastructure_ready():
             log_ok("MongoDB et MinIO prêts")
             return
         time.sleep(3)
-    status = {name: _service_status(name) for name in HEALTHY_SERVICES}
+    status = {
+        name: _service_status(name) for name in HEALTHY_SERVICES
+    }
+    status["port_27017"] = port_reachable(27017)
+    status["port_9000"] = port_reachable(9000)
     raise SetupError(f"Services non prêts : {status}")
 
 
 def services_running() -> bool:
-    return all(service_ready(name) for name in HEALTHY_SERVICES)
+    return infrastructure_ready()
 
 
 def acquire_lock() -> None:
@@ -260,6 +278,11 @@ def upload_raw_to_minio() -> None:
     if not raw_file.exists():
         raise SetupError("data/raw/weatherHistory.csv introuvable après extract")
 
+    if not port_reachable(9000):
+        raise SetupError(
+            "MinIO injoignable sur localhost:9000 — lancez : python scripts/setup.py"
+        )
+
     from minio import Minio
 
     endpoint = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
@@ -276,10 +299,15 @@ def upload_raw_to_minio() -> None:
         secure=endpoint.startswith("https://"),
     )
 
-    if not client.bucket_exists(bucket):
-        client.make_bucket(bucket)
+    try:
+        if not client.bucket_exists(bucket):
+            client.make_bucket(bucket)
+        client.fput_object(bucket, object_key, str(raw_file), content_type="text/csv")
+    except Exception as err:
+        raise SetupError(
+            f"Upload MinIO échoué ({endpoint}) — vérifiez Docker : docker compose ps"
+        ) from err
 
-    client.fput_object(bucket, object_key, str(raw_file), content_type="text/csv")
     log_ok(f"Raw uploadé → {bucket}/{object_key}")
 
 

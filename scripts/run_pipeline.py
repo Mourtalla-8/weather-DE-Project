@@ -46,6 +46,9 @@ def main() -> int:
     except SetupError as err:
         log_err(str(err))
         return 1
+    except Exception as err:
+        log_err(f"Erreur inattendue : {err}")
+        return 1
     except KeyboardInterrupt:
         log_err("Pipeline interrompu")
         return 130

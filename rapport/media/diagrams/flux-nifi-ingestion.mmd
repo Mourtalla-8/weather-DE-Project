@@ -1,0 +1,6 @@
+flowchart LR
+    Extract["extract.py"] --> LocalRaw["CSV brut"]
+    LocalRaw --> Mount["Volume NiFi input"]
+    Mount --> GetFile["GetFile"]
+    GetFile --> PutS3["PutS3Object"]
+    PutS3 --> MinIO["MinIO weather-lake"]

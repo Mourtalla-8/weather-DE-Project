@@ -14,7 +14,7 @@ data/
 # IDE
 .vscode/
 .idea/
-.cursor/
+.cursor
 
 # OS
 .DS_Store
@@ -22,3 +22,12 @@ Thumbs.db
 
 # Fichiers temporaires / dev local
 temp/
+
+# Rapport — assets volumineux (regenerables via rapport/scripts/export_assets.sh)
+rapport/data/raw/*.csv
+rapport/data/processed/*.csv
+rapport/database/dump/
+
+# Rapport — présentation exportée (regenerable via rapport/presentation/export.sh)
+rapport/presentation/*.pptx
+rapport/presentation/*.pdf

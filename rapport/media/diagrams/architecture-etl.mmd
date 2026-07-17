@@ -1,0 +1,28 @@
+flowchart TB
+    subgraph extract [Extract]
+        Kaggle[Kaggle dataset] --> ExtractPy["extract.py"]
+        ExtractPy --> LocalRaw["data raw"]
+    end
+
+    subgraph ingest [Ingestion vers MinIO]
+        LocalRaw --> NiFiFlow["NiFi Process Group Ingestion"]
+        LocalRaw --> PyUpload["run_pipeline.py upload Python"]
+        NiFiFlow --> MinIORaw["MinIO weather-lake raw"]
+        PyUpload --> MinIORaw
+    end
+
+    subgraph transform [Transform]
+        MinIORaw --> TransformPy["transform.py"]
+        TransformPy --> LocalProc["data processed"]
+        TransformPy --> MinIOProc["MinIO weather-processed"]
+    end
+
+    subgraph load [Load]
+        MinIOProc --> LoadPy["load.py"]
+        LoadPy --> MongoDB["MongoDB weather_dwh"]
+    end
+
+    subgraph downstream [Equipe Analyse]
+        MongoDB --> BI[EDA / ML / BI]
+        MinIOProc --> BI
+    end
