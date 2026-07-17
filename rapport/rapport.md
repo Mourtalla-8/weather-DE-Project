@@ -354,7 +354,7 @@ Les CSV et le dump MongoDB sont **exclus du dépôt Git** (taille) ; ils se rég
 
 ---
 
-## 13. Conclusion et perspectives
+## 13. Conclusion
 
 Nous avons livré un pipeline ETL **complet, documenté et reproductible** :
 
