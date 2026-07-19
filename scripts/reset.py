@@ -12,7 +12,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _common import (
+from lib.common import (
     LOCK_FILE,
     PROJECT_ROOT,
     SetupError,
@@ -74,7 +74,7 @@ def remove_lock() -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Reset du projet Weather ETL")
+    parser = argparse.ArgumentParser(description="Reset du projet Weather Data Platform")
     parser.add_argument(
         "--full",
         action="store_true",
@@ -82,7 +82,7 @@ def main() -> int:
     )
     args = parser.parse_args()
 
-    print("=== Reset Weather ETL ===")
+    print("=== Reset Weather Data Platform ===")
     try:
         log_info("Arrêt des conteneurs Docker")
         if docker_compose_down():

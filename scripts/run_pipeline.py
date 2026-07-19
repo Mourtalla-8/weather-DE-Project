@@ -8,7 +8,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from _common import (
+from lib.common import (
     SetupError,
     acquire_lock,
     ensure_prerequisites,

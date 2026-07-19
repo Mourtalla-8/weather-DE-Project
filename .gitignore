@@ -14,7 +14,6 @@ data/
 # IDE
 .vscode/
 .idea/
-.cursor
 
 # OS
 .DS_Store
@@ -23,11 +22,17 @@ Thumbs.db
 # Fichiers temporaires / dev local
 temp/
 
-# Rapport — assets volumineux (regenerables via rapport/scripts/export_assets.sh)
-rapport/data/raw/*.csv
-rapport/data/processed/*.csv
-rapport/database/dump/
+# Outputs analyse (regenerables)
+outputs/
 
-# Rapport — présentation exportée (regenerable via rapport/presentation/export.sh)
-rapport/presentation/*.pptx
-rapport/presentation/*.pdf
+# Venv local dans analysis/
+analysis/**/.venv/
+
+# Rapport — assets volumineux (regenerables via rapport/exports/export_assets.sh)
+rapport/exports/data/raw/*.csv
+rapport/exports/data/processed/*.csv
+rapport/exports/database/dump/
+
+# Rapport — présentation Marp exportée (regenerable via rapport/marp/export.sh)
+rapport/marp/*.pptx
+rapport/marp/*.pdf

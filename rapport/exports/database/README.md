@@ -23,7 +23,7 @@ Depuis la **racine du projet**, avec MongoDB démarré et le pipeline exécuté 
 
 ```bash
 python scripts/run_pipeline.py          # si pas déjà fait
-bash rapport/scripts/export_assets.sh   # copie CSV + mongodump
+bash rapport/exports/export_assets.sh   # copie CSV + mongodump
 ```
 
 Le script lit `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_HOST`, `MONGO_PORT` et `MONGO_DB` depuis `.env`.
@@ -37,7 +37,7 @@ Le script lit `MONGO_USER`, `MONGO_PASSWORD`, `MONGO_HOST`, `MONGO_PORT` et `MON
 Structure produite :
 
 ```
-rapport/database/dump/
+rapport/exports/database/dump/
 └── weather_dwh/
     ├── weather_observations.bson
     ├── weather_observations.metadata.json
@@ -51,7 +51,7 @@ rapport/database/dump/
 ### Sans authentification
 
 ```bash
-mongorestore --drop rapport/database/dump/
+mongorestore --drop rapport/exports/database/dump/
 ```
 
 ### Avec authentification (configuration par défaut du projet)
@@ -60,7 +60,7 @@ mongorestore --drop rapport/database/dump/
 mongorestore \
   --uri="mongodb://groupea_de:ForceN-GroupeA-Mongo@localhost:27017/?authSource=admin" \
   --drop \
-  rapport/database/dump/
+  rapport/exports/database/dump/
 ```
 
 Remplacez user/mot de passe par vos valeurs `.env` si différentes.
@@ -96,4 +96,4 @@ mongosh --eval 'db.getSiblingDB("weather_dwh").weather_observations.getIndexes()
 
 ---
 
-*Équipe Data Engineering — ForceN, Groupe A.*
+*Groupe A — ForceN.*

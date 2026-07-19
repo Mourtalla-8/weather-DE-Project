@@ -1,42 +1,41 @@
 #!/usr/bin/env bash
-# Exporte les datasets CSV et le dump MongoDB vers rapport/
-# Usage (depuis la racine du projet) : bash rapport/scripts/export_assets.sh
+# Exporte les datasets CSV et le dump MongoDB vers rapport/exports/
+# Usage (depuis la racine du projet) : bash rapport/exports/export_assets.sh
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
-RAPPORT="$ROOT/rapport"
+EXPORTS="$ROOT/rapport/exports"
 ENV_FILE="$ROOT/.env"
 
 echo "=== Export assets rapport ==="
 
-# --- CSV ---
 RAW_SRC="$ROOT/data/raw/weatherHistory.csv"
 PROC_SRC="$ROOT/data/processed/weather_processed.csv"
+ENRICHED_SRC="$ROOT/data/processed/weather_processed_enriched.csv"
 
-if [[ ! -f "$RAW_SRC" ]]; then
-  RAW_SRC="$ROOT/temp/Repport/weatherHistory.csv"
-fi
-if [[ ! -f "$PROC_SRC" ]]; then
-  PROC_SRC="$ROOT/temp/Repport/weather_processed.csv"
-fi
-
-mkdir -p "$RAPPORT/data/raw" "$RAPPORT/data/processed"
+mkdir -p "$EXPORTS/data/raw" "$EXPORTS/data/processed"
 
 if [[ -f "$RAW_SRC" ]]; then
-  cp "$RAW_SRC" "$RAPPORT/data/raw/weatherHistory.csv"
+  cp "$RAW_SRC" "$EXPORTS/data/raw/weatherHistory.csv"
   echo "[OK] raw: weatherHistory.csv"
 else
   echo "[WARN] weatherHistory.csv introuvable — lancez python scripts/run_pipeline.py"
 fi
 
 if [[ -f "$PROC_SRC" ]]; then
-  cp "$PROC_SRC" "$RAPPORT/data/processed/weather_processed.csv"
+  cp "$PROC_SRC" "$EXPORTS/data/processed/weather_processed.csv"
   echo "[OK] processed: weather_processed.csv"
 else
   echo "[WARN] weather_processed.csv introuvable"
 fi
 
-# --- MongoDB dump ---
+if [[ -f "$ENRICHED_SRC" ]]; then
+  cp "$ENRICHED_SRC" "$EXPORTS/data/processed/weather_processed_enriched.csv"
+  echo "[OK] enriched: weather_processed_enriched.csv"
+else
+  echo "[WARN] weather_processed_enriched.csv introuvable"
+fi
+
 if [[ -f "$ENV_FILE" ]]; then
   set -a
   # shellcheck disable=SC1090
@@ -55,7 +54,7 @@ if ! command -v mongodump &>/dev/null; then
   exit 0
 fi
 
-DUMP_DIR="$RAPPORT/database/dump"
+DUMP_DIR="$EXPORTS/database/dump"
 rm -rf "$DUMP_DIR"
 mkdir -p "$DUMP_DIR"
 
@@ -70,10 +69,11 @@ mongodump \
 
 echo "[OK] mongodump → $DUMP_DIR/$MONGO_DB/"
 
-# --- Résumé ---
 echo ""
 echo "=== Résumé ==="
-for f in "$RAPPORT/data/raw/weatherHistory.csv" "$RAPPORT/data/processed/weather_processed.csv"; do
+for f in "$EXPORTS/data/raw/weatherHistory.csv" \
+         "$EXPORTS/data/processed/weather_processed.csv" \
+         "$EXPORTS/data/processed/weather_processed_enriched.csv"; do
   if [[ -f "$f" ]]; then
     echo "  $(du -h "$f" | cut -f1)  $f"
   fi

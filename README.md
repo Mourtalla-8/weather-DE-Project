@@ -1,42 +1,95 @@
-# Weather ETL Platform
+# Weather Data Platform
 
-Pipeline ETL local pour le dataset météo : extraction, stockage dans un data lake MinIO, transformation Python, et chargement dans un Data Warehouse MongoDB.
+Projet **ForceN — Groupe A** : chaîne complète de la donnée météo, de l’ingestion à l’analyse et à la prédiction.
 
-**Périmètre de notre équipe** : livrer les données nettoyées dans MinIO (`weather-processed`) et dans MongoDB. L'équipe Data/BI récupère ensuite ces deux sources pour l'analyse et les dashboards.
+## Contexte
 
-## Rapport ETL
+| | |
+|---|---|
+| **Formation** | Data Engineering — ForceN |
+| **Équipe** | Groupe A |
+| **Dataset** | [Weather Dataset (Kaggle)](https://www.kaggle.com/datasets/muthuj7/weather-dataset) — observations météorologiques horaires à Szeged (Hongrie), 2005–2016 |
+| **Objectif** | Construire un pipeline ETL reproductible (MinIO + MongoDB), puis exploiter les données via EDA, ML et BI |
+| **Dépôt** | [weather-data-platform](https://github.com/Mourtalla-8/weather-data-platform) |
 
-Voir [rapport/rapport.md](rapport/rapport.md) pour le rapport complet de l'équipe (architecture, NiFi, MinIO, MongoDB, qualité des données, captures d'écran).
+Le projet couvre **deux volets intégrés** :
 
-Index du dossier : [rapport/README.md](rapport/README.md)
+1. **ETL** — extraction Kaggle, data lake MinIO, transformation Python, chargement MongoDB (`weather_dwh`)
+2. **Analyse** — EDA statistique, Random Forest (température), dashboard Streamlit
 
-**Présentation** : slides Marp exportables en PowerPoint/PDF dans [rapport/presentation/](rapport/presentation/README.md).
+Les jeux de données utilisés par l’analyse proviennent **uniquement** des sorties ETL : fichier enrichi local (`data/processed/`) ou objet MinIO `weather-processed/weather_processed_enriched.csv` (même contenu). MongoDB reçoit le CSV **clean** pour le DWH ; le BI/ML s’appuie sur la version **enrichie**.
+
+## Architecture
+
+```mermaid
+flowchart TB
+    subgraph extract [Extract]
+        Kaggle[Kaggle dataset] --> ExtractPy[extract.py]
+        ExtractPy --> LocalRaw[data/raw]
+    end
+
+    subgraph ingest [Ingestion MinIO]
+        LocalRaw --> NiFi[NiFi ou upload Python]
+        NiFi --> MinIORaw[MinIO weather-lake]
+    end
+
+    subgraph transform [Transform]
+        MinIORaw --> TransformPy[transform.py]
+        TransformPy --> LocalProc[data/processed]
+        TransformPy --> MinIOProc[MinIO weather-processed]
+    end
+
+    subgraph load [Load]
+        MinIOProc --> LoadPy[load.py]
+        LoadPy --> MongoDB[MongoDB weather_dwh]
+    end
+
+    subgraph analyse [Analyse Groupe A]
+        LocalProc --> EDA[analysis/eda]
+        MinIOProc -.->|fallback| EDA
+        LocalProc --> ML[analysis/ml]
+        LocalProc --> BI[analysis/bi Streamlit]
+    end
+```
+
+## Documentation
+
+| Document | Description |
+|---|---|
+| [**rapport/groupe_a_projet_final.pdf**](rapport/groupe_a_projet_final.pdf) | **Rapport final** du projet |
+| [**rapport/presentation_groupe_a_final.pptx**](rapport/presentation_groupe_a_final.pptx) | **Présentation finale** |
+| [rapport/README.md](rapport/README.md) | Index livrables, exports, assets |
+| [analysis/README.md](analysis/README.md) | Guide analyse (sources ETL, EDA, ML, Streamlit) |
+| [rapport/docs/nifi-ingestion.md](rapport/docs/nifi-ingestion.md) | Guide NiFi |
+
+Source Marp (régénération) : [rapport/marp/](rapport/marp/README.md)
 
 ---
 
 ## Structure du projet
 
 ```
-weather-DE-Project/
-├── docker-compose.yml      # MongoDB, MinIO, NiFi
-├── .env.example            # Template de configuration
-├── requirements.txt        # Dépendances Python
-├── etl/
-│   ├── extract.py          # Téléchargement dataset -> ./data/raw/
-│   ├── transform.py        # Nettoyage weather-lake -> weather-processed
-│   └── load.py             # Chargement weather-processed -> MongoDB
+weather-data-platform/
+├── docker-compose.yml
+├── requirements.txt
+├── requirements-analysis.txt
+├── etl/                         # Pipeline ETL
+├── analysis/                    # EDA, ML, BI (données = sortie ETL)
 ├── scripts/
-│   ├── setup.py            # Configuration initiale
-│   ├── run_pipeline.py     # Pipeline ETL automatique
-│   ├── reset.py            # Reset du projet
-│   └── _common.py          # Utilitaires partagés
-├── rapport/                # Rapport ETL + datasets + dump MongoDB
-└── data/                   # Données runtime (gitignored)
-    ├── raw/                # Fichiers bruts
-    ├── processed/          # Fichiers transformés (CSV, Parquet, metadata)
-    ├── minio/              # Volume persistant MinIO
-    ├── mongo/              # Volume persistant MongoDB
-    └── nifi/               # État NiFi
+│   ├── lib/common.py            # Utilitaires partagés
+│   ├── setup.py
+│   ├── run_pipeline.py
+│   ├── run_analysis.py
+│   └── reset.py
+├── rapport/
+│   ├── groupe_a_projet_final.pdf
+│   ├── presentation_groupe_a_final.pptx
+│   ├── docs/                    # Guides techniques
+│   ├── assets/                  # Captures, diagrammes, figures
+│   ├── exports/                 # CSV + dump MongoDB exportés
+│   └── marp/                    # Source présentation
+├── outputs/                     # Figures analyse (gitignored)
+└── data/                        # Runtime ETL (gitignored)
 ```
 
 ### Stockage MinIO - deux buckets séparés
@@ -54,7 +107,6 @@ Les scripts ETL créent automatiquement les buckets s'ils n'existent pas.
 
 - **Docker** et **Docker Compose** (v2+)
 - **Python 3.11+**
-- Environ **2 Go** d'espace disque libre
 - Ports locaux disponibles : `27017`, `9000`, `9001`, `8443`
 
 ---
@@ -62,18 +114,19 @@ Les scripts ETL créent automatiquement les buckets s'ils n'existent pas.
 ## Installation (clone GitHub)
 
 ```bash
-git clone https://github.com/Mourtalla-8/weather-DE-Project
-cd weather-DE-Project
+git clone https://github.com/Mourtalla-8/weather-data-platform
+cd weather-data-platform
 
-python scripts/setup.py
+python scripts/setup.py --with-analysis
 ```
 
 Le script `setup.py` vérifie les prérequis (Python, Docker), crée `.env` et `.venv`, installe les dépendances et démarre Docker.
 
-Ensuite, lancez le pipeline complet :
+Ensuite, lancez le pipeline complet puis l'analyse :
 
 ```bash
 python scripts/run_pipeline.py
+python scripts/run_analysis.py
 ```
 
 Pour remettre le projet à zéro (comme le dépôt GitHub) :
@@ -88,8 +141,9 @@ python scripts/setup.py        # reconfiguration
 
 | Script | Rôle |
 |---|---|
-| `scripts/setup.py` | Configuration initiale après clone |
+| `scripts/setup.py` | Configuration initiale après clone (`--with-analysis` pour EDA/ML/BI) |
 | `scripts/run_pipeline.py` | Pipeline ETL complet (extract -> MinIO -> transform -> load) |
+| `scripts/run_analysis.py` | Vérification dataset enrichi + entraînement ML |
 | `scripts/reset.py` | Reset du projet (état propre) |
 
 ---
@@ -139,8 +193,11 @@ Le script utilise `kagglehub` pour télécharger automatiquement le dataset publ
 #### a) Importer le Process Group
 
 1. Ouvrir NiFi : [https://localhost:8443](https://localhost:8443) (identifiants `NIFI_USER` / `NIFI_PASSWORD`)
-2. Sur le canvas, coller le **Process Group** fourni par l'équipe (copier-coller depuis le presse-papiers)
-3. Le Process Group contient les processeurs nécessaires (`GetFile`, `PutS3Object`, etc.)
+2. Copier le JSON du Process wwwwGroup `Ingestion` depuis [rapport/docs/nifi-ingestion.md — section 7](rapport/docs/nifi-ingestion.md#7-import-rapide-du-process-group-json)
+3. Sur le canvas NiFi : clic droit → **Paste** (ou `Ctrl+V`) pour importer le Process Group
+4. Le Process Group contient les processeurs nécessaires (`GetFile` et `PutS3Object`)
+
+> Guide complet : [rapport/docs/nifi-ingestion.md](rapport/docs/nifi-ingestion.md)
 
 #### b) Configurer les credentials MinIO (Controller Service)
 
@@ -284,9 +341,26 @@ Résultat attendu : `96429` documents.
 
 ---
 
-## Livrable
+## Analyse (EDA / ML / BI)
 
-Notre équipe livre deux sources prêtes à l'emploi :
+Après le pipeline ETL, l’analyse consomme le dataset enrichi via `analysis/paths.py` :
+
+1. `data/processed/weather_processed_enriched.csv` (sortie locale de `transform.py`)
+2. Sinon téléchargement depuis MinIO `weather-processed/weather_processed_enriched.csv`
+
+```bash
+python scripts/run_analysis.py
+jupyter notebook analysis/eda/EDA_Analyse_Statistique.ipynb
+streamlit run analysis/bi/app.py
+```
+
+Voir [analysis/README.md](analysis/README.md).
+
+---
+
+## Livrables
+
+Notre projet livre :
 
 ### 1. MinIO - bucket `weather-processed`
 
@@ -306,6 +380,15 @@ Notre équipe livre deux sources prêtes à l'emploi :
 - **Base** : `weather_dwh`
 - **Collection** : `weather_observations`
 - **Connexion** : `mongosh`, Compass, ou driver Python/BI (`pymongo`, etc.)
+
+### 3. Analyse intégrée
+
+| Composant | Emplacement |
+|---|---|
+| EDA statistique | `analysis/eda/EDA_Analyse_Statistique.ipynb` |
+| Dashboard Streamlit | `analysis/bi/app.py` |
+| Prédiction ML (Random Forest) | `analysis/ml/train_predict.py` |
+| Figures générées | `outputs/eda/`, `outputs/ml/` |
 
 ---
 
@@ -381,5 +464,6 @@ docker compose logs -f mongodb
 
 ## Équipe
 
-Projet Data Engineering - ForceN, Groupe A.
-Pipeline ETL météo : Extract -> Data Lake (MinIO) -> Transform -> Data Warehouse (MongoDB) -> Équipe Analyse.
+**ForceN — Groupe A**
+
+Pipeline complet : Extract → Data Lake (MinIO) → Transform → Data Warehouse (MongoDB) → Analyse (EDA / ML / BI).
