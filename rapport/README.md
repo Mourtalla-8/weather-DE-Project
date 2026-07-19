@@ -1,19 +1,22 @@
-# Dossier rapport ETL
+# Dossier rapport — Weather Data Platform
 
-Livrable documentaire de l'équipe **Data Engineering - ForceN, Groupe A**.
+Livrables documentaires du **Groupe A — ForceN**.
 
-Ce dossier regroupe la documentation, les captures d'écran, les datasets et le dump MongoDB du projet Weather ETL. Il est conçu pour la **passation** vers l'équipe Analyse / EDA / ML / BI.
+## Livrables principaux
 
----
+| Fichier | Description |
+|---|---|
+| [**groupe_a_projet_final.pdf**](groupe_a_projet_final.pdf) | **Rapport final** du projet |
+| [**presentation_groupe_a_final.pptx**](presentation_groupe_a_final.pptx) | **Présentation finale** du projet |
 
-## Documents
+## Documentation technique
 
-| Fichier | Description                                                       |
-|---|-------------------------------------------------------------------|
-| [**rapport.md**](rapport.md) | Rapport principal - architecture, pipeline, qualité, livrables    |
-| [**nifi-ingestion.md**](nifi-ingestion.md) | Guide NiFi pas à pas - Controller Service, processeurs, dépannage |
-| [**database/README.md**](database/README.md) | Export et restauration du dump MongoDB                            |
-| [**presentation/**](presentation/README.md) | Support de presentation (Marp) exportable en PowerPoint / PDF     |
+| Fichier | Description |
+|---|---|
+| [docs/nifi-ingestion.md](docs/nifi-ingestion.md) | Guide NiFi pas à pas |
+| [exports/database/README.md](exports/database/README.md) | Export / restauration MongoDB |
+| [marp/](marp/README.md) | Source Marp (régénération présentation) |
+| [../analysis/README.md](../analysis/README.md) | Guide analyse (EDA, ML, Streamlit) |
 
 ---
 
@@ -21,80 +24,44 @@ Ce dossier regroupe la documentation, les captures d'écran, les datasets et le 
 
 ```
 rapport/
-├── README.md                 # Ce fichier
-├── rapport.md                # Rapport principal
-├── nifi-ingestion.md         # Guide ingestion NiFi
-├── data/
-│   ├── raw/                  # weatherHistory.csv (gitignored)
-│   └── processed/            # weather_processed.csv (gitignored)
-├── database/
-│   ├── README.md             # Instructions mongorestore
-│   └── dump/                 # mongodump weather_dwh (gitignored)
-├── presentation/
-│   ├── README.md             # Instructions export .pptx / .pdf
-│   ├── slides.md             # Source Marp (16 slides)
-│   └── export.sh             # marp slides.md --pptx
-├── media/
-│   ├── nifi/                 # 11 captures NiFi
-│   ├── minio/                # 2 captures MinIO
-│   └── diagrams/             # Diagrammes exportés (PNG)
-└── scripts/
-    └── export_assets.sh      # Export CSV + mongodump
+├── README.md
+├── groupe_a_projet_final.pdf          # Rapport final
+├── presentation_groupe_a_final.pptx     # Présentation finale
+├── docs/
+│   └── nifi-ingestion.md
+├── assets/
+│   ├── nifi/                          # Captures NiFi
+│   ├── minio/                         # Captures MinIO
+│   ├── diagrams/                      # Diagrammes architecture
+│   └── Ana-BI-ML/                     # Figures analyse finales
+├── exports/
+│   ├── export_assets.sh               # Export CSV + mongodump
+│   ├── data/                          # CSV exportés (gitignored)
+│   └── database/                      # Dump MongoDB (gitignored)
+└── marp/
+    ├── slides.md
+    └── export.sh
 ```
 
 ---
 
-## Générer les assets localement
-
-Les CSV et le dump MongoDB sont **exclus du Git** (fichiers volumineux). Pour les produire :
+## Générer les exports localement
 
 ```bash
-# Depuis la racine du projet
-
-# 1. Environnement et pipeline
-python scripts/setup.py
+python scripts/setup.py --with-analysis
 python scripts/run_pipeline.py
-
-# 2. Copie CSV + mongodump vers rapport/
-bash rapport/scripts/export_assets.sh
+bash rapport/exports/export_assets.sh
 ```
 
-### Prérequis
-
-| Prérequis | Vérification |
-|---|---|
-| Docker + stack démarrée | `docker compose ps` |
-| Pipeline exécuté au moins une fois | CSV dans `data/raw/` et `data/processed/` |
-| `mongodump` installé | `mongodump --version` (paquet `mongodb-tools`) |
-| Fichier `.env` | Credentials MongoDB alignés avec Docker |
-
 ---
 
-## Restaurer MongoDB
-
-Voir [database/README.md](database/README.md) pour les commandes `mongorestore` et la vérification du nombre de documents (96 429 attendus).
-
----
-
-## Présentation
-
-Un support de présentation est fourni sous forme de slides **Marp** versionnées :
+## Présentation Marp (source)
 
 ```bash
-cd rapport/presentation
-bash export.sh          # génère presentation.pptx + presentation.pdf
+cd rapport/marp
+bash export.sh
 ```
 
-Voir [presentation/README.md](presentation/README.md) (prérequis Marp CLI).
-
 ---
 
-## Lecture recommandée
-
-1. [rapport.md](rapport.md) - vue d'ensemble du projet
-2. [nifi-ingestion.md](nifi-ingestion.md) - si vous devez reconfigurer NiFi
-3. [database/README.md](database/README.md) - si vous importez le dump sans relancer le pipeline
-
----
-
-*Équipe Data Engineering - ForceN, Groupe A.*
+*Groupe A — ForceN.*

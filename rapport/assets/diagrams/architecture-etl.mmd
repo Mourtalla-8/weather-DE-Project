@@ -22,7 +22,9 @@ flowchart TB
         LoadPy --> MongoDB["MongoDB weather_dwh"]
     end
 
-    subgraph downstream [Equipe Analyse]
-        MongoDB --> BI[EDA / ML / BI]
-        MinIOProc --> BI
+    subgraph analysis [Analyse Groupe A]
+        LocalProc --> EDA["analysis/eda"]
+        LocalProc --> ML["analysis/ml"]
+        LocalProc --> Streamlit["analysis/bi"]
+        MongoDB -.-> Streamlit
     end

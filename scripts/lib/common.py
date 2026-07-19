@@ -11,11 +11,12 @@ import sys
 import time
 from pathlib import Path
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 VENV_DIR = PROJECT_ROOT / ".venv"
 ENV_FILE = PROJECT_ROOT / ".env"
 ENV_EXAMPLE = PROJECT_ROOT / ".env.example"
 REQUIREMENTS = PROJECT_ROOT / "requirements.txt"
+REQUIREMENTS_ANALYSIS = PROJECT_ROOT / "requirements-analysis.txt"
 COMPOSE_FILE = PROJECT_ROOT / "docker-compose.yml"
 LOCK_FILE = PROJECT_ROOT / ".pipeline.lock"
 
@@ -126,13 +127,19 @@ def ensure_venv() -> None:
     log_ok("Environnement virtuel créé")
 
 
-def install_requirements() -> None:
+def install_requirements(*, with_analysis: bool = False) -> None:
     if not REQUIREMENTS.exists():
         raise SetupError("requirements.txt introuvable")
     pip_name = "pip.exe" if os.name == "nt" else "pip"
     pip = python_executable().parent / pip_name
     run([str(pip), "install", "-q", "-r", str(REQUIREMENTS)], quiet=True)
-    log_ok("Dépendances Python installées")
+    if with_analysis:
+        if not REQUIREMENTS_ANALYSIS.exists():
+            raise SetupError("requirements-analysis.txt introuvable")
+        run([str(pip), "install", "-q", "-r", str(REQUIREMENTS_ANALYSIS)], quiet=True)
+        log_ok("Dépendances Python (ETL + analyse) installées")
+    else:
+        log_ok("Dépendances Python installées")
 
 
 def ensure_data_dirs() -> None:
@@ -321,7 +328,7 @@ def verify_packages() -> bool:
     return True
 
 
-def ensure_python_env(*, install: bool = False) -> None:
+def ensure_python_env(*, install: bool = False, with_analysis: bool = False) -> None:
     """Garantit .env, .venv et les dépendances Python."""
     ensure_env_file()
     ensure_venv()
@@ -331,7 +338,7 @@ def ensure_python_env(*, install: bool = False) -> None:
             log_info("Installation des dépendances")
         else:
             log_info("Installation des dépendances manquantes")
-        install_requirements()
+        install_requirements(with_analysis=with_analysis)
     if not verify_packages():
         raise SetupError("Dépendances Python incomplètes — relancez scripts/setup.py")
     log_ok("Dépendances Python vérifiées")

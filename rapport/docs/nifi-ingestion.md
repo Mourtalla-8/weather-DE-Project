@@ -1,6 +1,6 @@
-# Guide d'ingestion NiFi - Weather ETL
+# Guide d'ingestion NiFi — Weather Data Platform
 
-**Projet** : Data Engineering - ForceN, Groupe A  
+**Projet** : ForceN — Groupe A  
 **Composant** : Apache NiFi 2.x - Process Group `Ingestion`  
 **Objectif** : déposer le CSV brut dans MinIO (`weather-lake/raw/`)
 
@@ -32,7 +32,7 @@ Dans notre architecture, NiFi assure la **couche d'ingestion** : il surveille le
 | Clé objet | `raw/${filename}` |
 
 > **Note - pipeline automatisé**  
-> Le script [`scripts/run_pipeline.py`](../scripts/run_pipeline.py) peut aussi envoyer le CSV brut vers MinIO via Python (`upload_raw_to_minio`). NiFi reste la voie d'ingestion **documentée et reproductible** pour l'orchestration ; les deux approches écrivent au même emplacement MinIO.
+> Le script [`scripts/run_pipeline.py`](../../scripts/run_pipeline.py) peut aussi envoyer le CSV brut vers MinIO via Python (`upload_raw_to_minio`). NiFi reste la voie d'ingestion **documentée et reproductible** pour l'orchestration ; les deux approches écrivent au même emplacement MinIO.
 
 ---
 
@@ -64,7 +64,7 @@ flowchart LR
 ```
 
 <!-- Fallback si Mermaid non supporté par le viewer -->
-![Flux d'ingestion NiFi vers MinIO](media/diagrams/flux-nifi-ingestion.png)
+![Flux d'ingestion NiFi vers MinIO](../assets/diagrams/flux-nifi-ingestion.png)
 
 **Chaîne de processeurs** (Process Group `Ingestion`) :
 
@@ -114,21 +114,21 @@ Ce service n'est **pas inclus** dans l'export JSON du Process Group : il doit ê
 
 Clic droit sur le canevas NiFi -> **Configure Controller Services**.
 
-![Ouvrir Controller Services depuis le canevas](media/nifi/clique_droit_canva.png)
+![Ouvrir Controller Services depuis le canevas](../assets/nifi/clique_droit_canva.png)
 
 ### Étape 2 - Ajouter le service
 
 Cliquer sur **+** (Add Controller Service), rechercher `AWSCredentialsProviderControllerService`, puis l'ajouter.
 
-![Bouton d'ajout d'un Controller Service](media/nifi/clique_in_add_sign.png)
+![Bouton d'ajout d'un Controller Service](../assets/nifi/clique_in_add_sign.png)
 
-![Recherche et ajout AWSCredentialsProviderControllerService](media/nifi/search_and_ad_awCPS.png)
+![Recherche et ajout AWSCredentialsProviderControllerService](../assets/nifi/search_and_ad_awCPS.png)
 
 ### Étape 3 - Configurer les identifiants MinIO
 
 Ouvrir la configuration du service nouvellement créé.
 
-![Édition du Controller Service](media/nifi/edit_awsCPS.png)
+![Édition du Controller Service](../assets/nifi/edit_awsCPS.png)
 
 Renseigner :
 
@@ -137,13 +137,13 @@ Renseigner :
 | **Access Key ID** | `MINIO_ACCESS_KEY` |
 | **Secret Access Key** | `MINIO_SECRET_KEY` |
 
-![Configuration Access Key et Secret Key](media/nifi/config_awsCPS.png)
+![Configuration Access Key et Secret Key](../assets/nifi/config_awsCPS.png)
 
 Cliquer sur l'icône **Verification** (à droite). Le message attendu est :
 
 > **Component Validation passed**
 
-![Résultat de la validation](media/nifi/awsCPS_verification.png)
+![Résultat de la validation](../assets/nifi/awsCPS_verification.png)
 
 Puis **Apply** pour enregistrer.
 
@@ -151,21 +151,21 @@ Puis **Apply** pour enregistrer.
 
 Activer `AWSCredentialsProviderControllerService` avec le scope **Service and referencing components**.
 
-![Activation du Controller Service](media/nifi/activate_awsCPS.png)
+![Activation du Controller Service](../assets/nifi/activate_awsCPS.png)
 
-![Scope Service and referencing components](media/nifi/activate_awsCPS_with_SRC.png)
+![Scope Service and referencing components](../assets/nifi/activate_awsCPS_with_SRC.png)
 
 État attendu après activation :
 
-![Service activé (vue Controller Services)](media/nifi/actived.png)
+![Service activé (vue Controller Services)](../assets/nifi/actived.png)
 
-![Service activé (détail AWS Credentials)](media/nifi/activedaws.png)
+![Service activé (détail AWS Credentials)](../assets/nifi/activedaws.png)
 
 ### Étape 5 - Lier le service au processeur PutS3Object
 
 Dans les propriétés de `PutS3Object`, sélectionner le Controller Service activé pour **AWS Credentials Provider Service**.
 
-![Sélection du Controller Service dans PutS3Object](media/nifi/select_awsCPS_propety_for_PutS3Object.png)
+![Sélection du Controller Service dans PutS3Object](../assets/nifi/select_awsCPS_propety_for_PutS3Object.png)
 
 ---
 
@@ -309,4 +309,4 @@ Le JSON complet (avec tous les descripteurs de propriétés) est disponible dans
 
 ---
 
-*Guide rédigé par l'équipe Data Engineering - ForceN, Groupe A.*
+*Guide rédigé par le Groupe A — ForceN.*
